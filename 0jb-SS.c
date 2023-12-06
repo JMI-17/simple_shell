@@ -6,9 +6,9 @@
  */
 int main(void)
 {
-	char *message = "Hello, Betty!";
+        char *message = "Hello, Betty!";
 
-	printf("%s\n", message);
+        printf("%s\n", message);
 
-	return EXIT_SUCCESS;
+        return EXIT_SUCCESS;
 }

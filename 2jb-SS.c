@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #define MAX_COMMAND_LENGTH 100
+#define MAX_ARGUMENTS 10
 
 /**
  * displayPrompt - Displays the shell prompt.
@@ -22,17 +23,11 @@ void displayPrompt(void)
  */
 int main(void)
 {
-    char *const envp[] = {NULL};
     char command[MAX_COMMAND_LENGTH];
     pid_t pid;
-    char *args[2];
-    char *message;
-
-    args[1] = NULL; /* Ensure the second element is NULL initially */
-
-    /* Display a greeting message */
-    message = "Hello, Betty!";
-    printf("%s\n", message);
+    char *args[MAX_ARGUMENTS + 1];  /* +1 for the NULL at the end */
+    int i;
+    char *token;
 
     while (1)
     {
@@ -49,6 +44,17 @@ int main(void)
         /* Remove the newline character at the end */
         command[strcspn(command, "\n")] = '\0';
 
+        /* Tokenize the command into arguments */
+        i = 0;
+        token = strtok(command, " ");
+        while (token != NULL && i < MAX_ARGUMENTS)
+        {
+            args[i] = token;
+            token = strtok(NULL, " ");
+            i++;
+        }
+        args[i] = NULL;  /* Set the last element to NULL to terminate the args array */
+
         /* Fork a new process */
         pid = fork();
 
@@ -61,11 +67,10 @@ int main(void)
         if (pid == 0)
         {
             /* Child process */
-            /* Execute the command */
-            args[0] = command;
-            if (execve(command, args, envp) == -1)
+            /* Execute the command with arguments */
+            if (execvp(args[0], args) == -1)
             {
-                perror("execve");
+                perror("execvp");
                 exit(EXIT_FAILURE);
             }
         }
@@ -83,7 +88,7 @@ int main(void)
             /* Check if the child process terminated successfully */
             if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
             {
-                fprintf(stderr, "Error: Command '%s' not found\n", command);
+                fprintf(stderr, "Error: Command '%s' not found\n", args[0]);
             }
         }
     }
