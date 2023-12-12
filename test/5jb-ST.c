@@ -9,13 +9,14 @@
 
 extern char **environ;
 
-int main() {
-    char **env = environ;
+int main(void)
+{
+	char **env = environ;
 
-    while (*env != NULL) {
-        printf("%s\n", *env);
-        env++;
-    }
-
-    return 0;
+	while (*env != NULL)
+	{
+		printf("%s\n", *env);
+		env++;
+	}
+	return (0);
 }
