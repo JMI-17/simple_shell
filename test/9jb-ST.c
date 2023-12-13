@@ -1,82 +1,82 @@
-#include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
-extern char **environ;
-
-int custom_setenv(const char *name, const char *value, int overwrite)
-{
-	char *env_entry;
+int custom_setenv(const char *name, const char *value, int overwrite) {
+    char *env_entry;
     size_t len = strlen(name) + strlen(value) + 2;
     env_entry = (char *)malloc(len);
 
     if (name == NULL || name[0] == '\0' || strchr(name, '=') != NULL) {
-        fprintf(stderr, "Invalid variable name\n");
-        return (-1);
+        char error_msg[] = "Invalid variable name\n";
+        write(STDERR_FILENO, error_msg, sizeof(error_msg) - 1);
+        return -1;
     }
 
     if (!overwrite && getenv(name) != NULL) {
-        fprintf(stderr, "Variable already exists\n");
-        return (0);
+        char error_msg[] = "Variable already exists\n";
+        write(STDERR_FILENO, error_msg, sizeof(error_msg) - 1);
+        return 0;
     }
 
-   
     if (env_entry == NULL) {
-        fprintf(stderr, "Memory allocation error\n");
-        return (-1);
+        char error_msg[] = "Memory allocation error\n";
+        write(STDERR_FILENO, error_msg, sizeof(error_msg) - 1);
+        return -1;
     }
 
-    snprintf(env_entry, len, "%s=%s", name, value);
+    strcpy(env_entry, name);
+    strcat(env_entry, "=");
+    strcat(env_entry, value);
 
     if (putenv(env_entry) != 0) {
-        fprintf(stderr, "Failed to set environment variable: %s\n", strerror(errno));
+        char error_msg[] = "Failed to set environment variable: ";
+        write(STDERR_FILENO, error_msg, sizeof(error_msg) - 1);
+        write(STDERR_FILENO, strerror(errno), strlen(strerror(errno)));
+        write(STDERR_FILENO, "\n", 1);
         free(env_entry);
-        return (-1);
+        return -1;
     }
 
-    return (0);
+    return 0;
 }
-
-int custom_unsetenv(const char *name) {
-    if (name == NULL || name[0] == '\0' || strchr(name, '=') != NULL) {
-        fprintf(stderr, "Invalid variable name\n");
-        return (-1);
-    }
-
-    if (unsetenv(name) != 0) {
-        fprintf(stderr, "Failed to unset environment variable: %s\n", strerror(errno));
-        return (-1);
-    }
-
-    return (0);
-}
-
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        fprintf(stderr, "Usage:\n");
-        fprintf(stderr, "  setenv VARIABLE VALUE\n");
-        fprintf(stderr, "  unsetenv VARIABLE\n");
-        return (1);
+        char usage[] = "Usage:\n"
+                       "  setenv VARIABLE VALUE\n"
+                       "  unsetenv VARIABLE\n";
+        write(STDERR_FILENO, usage, strlen(usage));
+        return 1;
     }
 
     if (strcmp(argv[1], "setenv") == 0) {
         if (argc != 4) {
-            fprintf(stderr, "Usage: setenv VARIABLE VALUE\n");
-            return (1);
+            char usage_setenv[] = "Usage: setenv VARIABLE VALUE\n";
+            write(STDERR_FILENO, usage_setenv, strlen(usage_setenv));
+            return 1;
         }
-        return (custom_setenv(argv[2], argv[3], 1));
+ 
+	char setenv_error[] = "Function for setenv is not implemented.\n";
+        write(STDERR_FILENO, setenv_error, strlen(setenv_error));
+        return 1;
     } else if (strcmp(argv[1], "unsetenv") == 0) {
         if (argc != 3) {
-            fprintf(stderr, "Usage: unsetenv VARIABLE\n");
-            return (1);
+            char usage_unsetenv[] = "Usage: unsetenv VARIABLE\n";
+            write(STDERR_FILENO, usage_unsetenv, strlen(usage_unsetenv));
+            return 1;
         }
-        return (custom_unsetenv(argv[2]));
+
+        char unsetenv_error[] = "Function for unsetenv is not implemented.\n";
+        write(STDERR_FILENO, unsetenv_error, strlen(unsetenv_error));
+        return 1;
     } else {
-        fprintf(stderr, "Unknown command: %s\n", argv[1]);
-        return (1);
+        char unknown_command[] = "Unknown command: ";
+        write(STDERR_FILENO, unknown_command, strlen(unknown_command));
+        write(STDERR_FILENO, argv[1], strlen(argv[1]));
+        write(STDERR_FILENO, "\n", 1);
+        return 1;
     }
 
-    return (0);
+    return 0;
 }
-
