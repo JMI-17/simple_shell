@@ -4,89 +4,87 @@
 
 #define BUFFER_SIZE 128
 
-/**
- * custom_getline - program performs a getline function
- * Return: Always 0
- */
+char *custom_getline() {
+    char *line = NULL;
+    int size = 0;
+    int capacity = BUFFER_SIZE;
+     char *temp = (char *)malloc(capacity);
+     int i;
 
-char *custom_getline()
-{
-	static char buffer[BUFFER_SIZE];
-	static int position = 0;
-	static int length = 0;
-	char *line = NULL;
-	int c;
-	int size = 0;
-	
-	while (1)
-	{
-		if (position >= length)
-		{
-			position = 0;
-			length = read(STDIN_FILENO, buffer, BUFFER_SIZE);
-			
-			if (length <= 0)
-			{
-				if (line != NULL && size > 0)
-				{
-					line[size] = '\0';
-					return (line);
-				}
-				return (NULL);
-			}
-		}
-		c = buffer[position++];
-		if (c == '\n' || c == EOF)
-		{
-			if (line == NULL)
-			{
-				line = (char *)malloc(size + 1);
-			}
-			else
-			{
-				char *temp = (char *)realloc(line, size + 1);
-				if (temp == NULL)
-				{
-					free(line);
-					return (NULL);
-				}
-				line = temp;
-			}
-			line[size] = '\0';
-			return (line);
-		}
-		else
-		{
-			if (line == NULL)
-			{
-				line = (char *)malloc(size + 1);
-			}else
-			{
-				char *temp = (char *)realloc(line, size + 1);
-				if (temp == NULL)
-				{
-					free(line);
-					return (NULL);
-				}
-				line = temp;
-			}
-			line[size++] = c;
-		}
-	}
+    while (1) {
+        char c;
+        int bytes_read = read(STDIN_FILENO, &c, 1);
+
+        if (bytes_read <= 0) {
+            if (line != NULL && size > 0) {
+                line[size] = '\0';
+                return line;
+            }
+            return NULL;
+        }
+
+        if (c == '\n' || c == EOF) {
+            if (line == NULL) {
+                line = (char *)malloc(size + 1);
+                if (line == NULL) {
+                    perror("Memory allocation error");
+                    return NULL;
+                }
+            } else if (size >= capacity - 1) {
+                capacity *= 2;
+                
+                if (temp == NULL) {
+                    perror("Memory allocation error");
+                    free(line);
+                    return NULL;
+                }
+                for (i = 0; i < size; ++i) {
+                    temp[i] = line[i];
+                }
+                free(line);
+                line = temp;
+            }
+            line[size++] = '\0';
+            return line;
+        } else {
+            if (line == NULL) {
+                line = (char *)malloc(capacity);
+                if (line == NULL) {
+                    perror("Memory allocation error");
+                    return NULL;
+                }
+            } else if (size >= capacity - 1) {
+                capacity *= 2;
+               
+                if (temp == NULL) {
+                    perror("Memory allocation error");
+                    free(line);
+                    return NULL;
+                }
+                for (i = 0; i < size; ++i) {
+                    temp[i] = line[i];
+                }
+                free(line);
+                line = temp;
+            }
+            line[size++] = c;
+        }
+    }
 }
 
-/**
- * main: main function
- * Returnn: Always 0
- */
 
 int main() {
     char *line;
 
-    while ((line = custom_getline()) != NULL)
-    {
-	    printf("Input: %s\n", line);
-	    free(line);
+    while ((line = custom_getline()) != NULL) {
+        int i = 0;
+        while (line[i] != '\0') {
+            write(STDOUT_FILENO, &line[i], 1);
+            ++i;
+        }
+        write(STDOUT_FILENO, "\n", 1);
+        free(line);
     }
-    return (0);
+
+    return 0;
 }

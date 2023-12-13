@@ -1,22 +1,26 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-/**
- * main - function gets environment built-in
- *
- * Return: Always 0.
- */
 
 extern char **environ;
 
-int main(void)
-{
-	char **env = environ;
+int main() {
+    int i = 0;
+    char *env_var;
 
-	while (*env != NULL)
-	{
-		printf("%s\n", *env);
-		env++;
-	}
-	return (0);
+
+    while ((env_var = environ[i++]) != NULL) {
+        write(STDOUT_FILENO, env_var, strlen(env_var));
+        write(STDOUT_FILENO, "\n", 1);
+    }
+
+    return 0;
 }
+
+

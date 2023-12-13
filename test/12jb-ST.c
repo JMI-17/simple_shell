@@ -1,35 +1,27 @@
-#include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
-extern char **environ;
-
-void execute_command(const char *cmd)
-{
-	char *command = strdup(cmd);
-	char *token = strtok(command, "&&||");
-	char *cmd1 = strtok(token, "||");
-            char *cmd2 = strtok(NULL, "||");
+void execute_command(const char *cmd) {
+    char *command = strdup(cmd);
+    char *token = strtok(command, "&|");
+    int status;
 
     if (cmd == NULL || cmd[0] == '\0') {
-        fprintf(stderr, "Invalid command\n");
+        write(STDERR_FILENO, "Invalid command\n", 16);
         return;
     }
 
-    
     if (command == NULL) {
-        fprintf(stderr, "Memory allocation error\n");
+        write(STDERR_FILENO, "Memory allocation error\n", 24);
         return;
     }
-
-    
 
     while (token != NULL) {
-        int status;
-
         if (strstr(token, "&&") != NULL) {
-         
+            char *cmd1 = strtok(token, "&");
+            char *cmd2 = strtok(NULL, "&");
 
             if (cmd1 != NULL && cmd2 != NULL) {
                 status = system(cmd1);
@@ -38,8 +30,8 @@ void execute_command(const char *cmd)
                 }
             }
         } else if (strstr(token, "||") != NULL) {
-            char *cmd1 = strtok(token, "||");
-            char *cmd2 = strtok(NULL, "||");
+            char *cmd1 = strtok(token, "|");
+            char *cmd2 = strtok(NULL, "|");
 
             if (cmd1 != NULL && cmd2 != NULL) {
                 status = system(cmd1);
@@ -48,14 +40,21 @@ void execute_command(const char *cmd)
                 }
             }
         } else {
-            status = system(token);
+            int pipe_pos = strcspn(token, "|&");
+            char* command = strndup(token, pipe_pos);
+            status = system(command);
+            free(command);
         }
 
         if (status != 0) {
-            fprintf(stderr, "Failed to execute command: %s\n", token);
+            char error_msg[100];
+            strcpy(error_msg, "Failed to execute command: ");
+            strcat(error_msg, token);
+            strcat(error_msg, "\n");
+            write(STDERR_FILENO, error_msg, strlen(error_msg));
         }
 
-        token = strtok(NULL, "&&||");
+        token = strtok(NULL, "&|");
     }
 
     free(command);
@@ -66,6 +65,6 @@ int main() {
 
     execute_command(input_commands);
 
-    return (0);
+    return 0;
 }
 
