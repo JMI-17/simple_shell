@@ -12,8 +12,8 @@
  */
 void displayPrompt(void)
 {
-    printf("$\t");
-    fflush(stdout); /* Ensure the prompt is displayed immediately */
+    char prompt[] = "$\t";
+    write(STDOUT_FILENO, prompt, sizeof(prompt) - 1); /* Ensure the prompt is displayed immediately */
 }
 
 /**
@@ -36,7 +36,7 @@ int main(void)
         if (fgets(command, MAX_COMMAND_LENGTH, stdin) == NULL)
         {
             /* Handle end of file (Ctrl+D) */
-            printf("\n");
+            write(STDOUT_FILENO, "\n", 1);
             break;
         }
 
@@ -48,7 +48,8 @@ int main(void)
 
         if (pid == -1)
         {
-            perror("fork");
+            char error_message[] = "Error: Fork failed\n";
+            write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
             exit(EXIT_FAILURE);
         }
 
@@ -59,7 +60,8 @@ int main(void)
             args[0] = command;
             if (execve(command, args, envp) == -1)
             {
-                perror("execve");
+                char error_message[] = "Error: execve failed\n";
+                write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
                 exit(EXIT_FAILURE);
             }
         }
@@ -70,14 +72,17 @@ int main(void)
             int status;
             if (waitpid(pid, &status, 0) == -1)
             {
-                perror("waitpid");
+                char error_message[] = "Error: waitpid failed\n";
+                write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
                 exit(EXIT_FAILURE);
             }
 
             /* Check if the child process terminated successfully */
             if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
             {
-                fprintf(stderr, "Error: Command '%s' not found\n", command);
+                char error_message[MAX_COMMAND_LENGTH + sizeof("Error: Command '' not found\n")];
+                sprintf(error_message, "Error: Command '%s' not found\n", command);
+                write(STDERR_FILENO, error_message, strlen(error_message));
             }
         }
     }
