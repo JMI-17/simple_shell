@@ -1,26 +1,23 @@
-#include <stdio.h>
 #include <unistd.h>
-#include <stdlib.h>
 #include <fcntl.h>
-#include <dirent.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include "main.h"
 
 
-extern char **environ;
+/**
+ * main - the main function
+ * Return: Always 0
+ */
 
-int main() {
-    int i = 0;
-    char *env_var;
+int main(void)
+{
+	int i = 0;
+	char *env_var;
 
-
-    while ((env_var = environ[i++]) != NULL) {
-        write(STDOUT_FILENO, env_var, strlen(env_var));
-        write(STDOUT_FILENO, "\n", 1);
-    }
-
-    return 0;
+	while ((env_var = environ[i++]) != NULL)
+	{
+		write(STDOUT_FILENO, env_var, strlen(env_var));
+		write(STDOUT_FILENO, "\n", 1);
+	}
+	return (0);
 }
-
-
