@@ -1,5 +1,6 @@
 #ifndef MAIN_H
 #define MAIN_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,15 +8,23 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-<<<<<<< HEAD
 #define MAX_COMMAND_LENGTH 100
-=======
-extern char **environ;
-int custom_setenv(const char *name, const char *value, int overwrite);
->>>>>>> 71e39c435b44359267ac16c292106542444f2b6f
 
-/* Function prototypes */
+/**
+ * displayPrompt - Displays the shell prompt.
+ */
 void displayPrompt(void);
+
+/**
+ * printError - Prints an error message.
+ * @msg: The error message to print.
+ */
 void printError(const char *msg);
-void displayPrompt2(void);
+
+/**
+ * executeCommand - Executes the given command using fork and execve.
+ * @command: The command to execute.
+ */
+void executeCommand(const char *command);
+
 #endif /* MAIN_H */

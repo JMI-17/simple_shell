@@ -1,80 +1,67 @@
 #include "main.h"
-
 /**
- * main - Entry point of the shell program.
- * Return: Always 0 on success.
+ * main - Entry point for the simple shell.
+ *
+ * Return: Always 0.
  */
 int main(void)
 {
-	char *const envp[] = {NULL};
-	char *command = NULL; /* Declare as pointer */
-	size_t len = 0;       /* Length of the line read */
-	ssize_t read;
+        char buffer[BUFFER_SIZE];
+        char *args[2];
+        pid_t child_pid;
+        int status;
 
-	pid_t pid;
-	char *args[3];
-	args[2] = NULL; /* Ensure the third element is NULL initially */
+        while (1)
+        {
+                display_prompt();
 
-	while (1)
-	{
-		displayPrompt();
+                if (fgets(buffer, BUFFER_SIZE, stdin) == NULL)
+                {
+                        write(STDOUT_FILENO, "\n", 1);
+                        break;
+                }
 
-		/* Read a command from the user */
-		read = getline(&command, &len, stdin);
-		if (read == -1)
-		{
-			/* Handle end of file (Ctrl+D) or error */
-			perror("Error reading command");
-			free(command); /* Free allocated memory */
-			break;
-		}
+                buffer[strcspn(buffer, "\n")] = '\0';
 
-		/* Remove the newline character at the end */
-		command[strcspn(command, "\n")] = '\0';
+                child_pid = fork();
 
-		/* Fork a new process */
-		pid = fork();
+                if (child_pid == -1)
+                {
+                        perror("Error forking");
+                        exit(EXIT_FAILURE);
+                }
 
-		if (pid == -1)
-		{
-			perror("fork");
-			free(command); /* Free allocated memory */
-			exit(EXIT_FAILURE);
-		}
+                if (child_pid == 0)
+                {
+                        args[0] = buffer;
+                        args[1] = NULL;
 
-		if (pid == 0)
-		{
-			/* Child process */
-			/* Execute the command */
-			args[0] = command;
-			args[1] = command; /* Additional argument for execve */
-			if (execve("/bin/sh", args, envp) == -1)
-			{
-				perror("execve");
-				free(command); /* Free allocated memory */
-				exit(EXIT_FAILURE);
-			}
-		}
-		else
-		{
-			/* Parent process */
-			/* Wait for the child process to complete */
-			int status;
-			if (waitpid(pid, &status, 0) == -1)
-			{
-				perror("waitpid");
-				free(command); /* Free allocated memory */
-				exit(EXIT_FAILURE);
-			}
+                        if (execve(args[0], args, NULL) == -1)
+                        {
+                                char error_message[] = "Error executing command\n";
+                                write(STDOUT_FILENO, error_message, sizeof(error_message) - 1);
+                                _exit(EXIT_FAILURE);
+                        }
+                }
+                else
+                {
+                        if (waitpid(child_pid, &status, 0) == -1)
+                        {
+                                char error_message[] = "Error waiting for child process\n";
+                                write(STDOUT_FILENO, error_message, sizeof(error_message) - 1);
+                                exit(EXIT_FAILURE);
+                        }
 
-			/* Check if the child process terminated successfully */
-			if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-			{
-				fprintf(stderr, "Error: Command not found\n");
-			}
-		}
-	}
+                        if (WIFEXITED(status))
+                        {
+                                write_exit_status(WEXITSTATUS(status));
+                        }
+                        else if (WIFSIGNALED(status))
+                        {
+                                write_signal_message(WTERMSIG(status));
+                        }
+                }
+        }
 
-	free(command); /* Free allocated memory */
-	return 0;
+        return 0;
 }

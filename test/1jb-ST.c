@@ -1,13 +1,46 @@
 #include "main.h"
 
-/* Function definitions */
-void displayPrompt(void)
-{
-    write(1, "$\t", 2);
-    fflush(stdout); /* Ensure the prompt is displayed immediately */
-}
+#define SUCCESS 0
+#define COMMAND_NOT_FOUND 127
 
-void printError(const char *msg)
+/**
+ * executeCommand - Executes the given command using fork and execve.
+ * @command: The command to execute.
+ */
+void executeCommand(const char *command)
 {
-    perror(msg);
+    pid_t pid;
+    int status;
+
+    pid = fork();
+
+    if (pid == -1)
+    {
+        printError("fork");
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid == 0)
+    {
+        /* Child process */
+        if (execlp("/bin/sh", "sh", "-c", command, NULL) == -1)
+        {
+            perror("execve");
+            _exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        /* Parent process */
+        if (waitpid(pid, &status, 0) == -1)
+        {
+            printError("waitpid");
+            exit(EXIT_FAILURE);
+        }
+
+        if (WIFEXITED(status) && WEXITSTATUS(status) != SUCCESS)
+        {
+            write(STDERR_FILENO, "Error: Command not found\n", 26);
+        }
+    }
 }
