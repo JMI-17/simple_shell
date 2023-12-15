@@ -1,26 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include "main.h"
 
-#define MAX_COMMAND_LENGTH 100
-#define MAX_ARGUMENTS 10
-
-/**
- * displayPrompt - Displays the shell prompt.
- */
-void displayPrompt(void)
-{
-    printf("$\t");
-    fflush(stdout); /* Ensure the prompt is displayed immediately */
-}
-
-/**
- * main - Entry point of the shell program.
- * Return: Always 0 on success.
- */
 int main(void)
 {
     char command[MAX_COMMAND_LENGTH];
