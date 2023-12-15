@@ -1,91 +1,46 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include "main.h"
 
-#define MAX_COMMAND_LENGTH 100
+#define SUCCESS 0
+#define COMMAND_NOT_FOUND 127
 
 /**
- * displayPrompt - Displays the shell prompt.
+ * executeCommand - Executes the given command using fork and execve.
+ * @command: The command to execute.
  */
-void displayPrompt(void)
+void executeCommand(const char *command)
 {
-    char prompt[] = "$\t";
-    write(STDOUT_FILENO, prompt, sizeof(prompt) - 1); /* Ensure the prompt is displayed immediately */
-}
-
-/**
- * main - Entry point of the shell program.
- * Return: Always 0 on success.
- */
-int main(void)
-{
-    char *const envp[] = {NULL};
-    char command[MAX_COMMAND_LENGTH];
     pid_t pid;
-    char *args[2];
-    args[1] = NULL; /* Ensure the second element is NULL initially */
+    int status;
 
-    while (1)
+    pid = fork();
+
+    if (pid == -1)
     {
-        displayPrompt();
+        printError("fork");
+        exit(EXIT_FAILURE);
+    }
 
-        /* Read a command from the user */
-        if (fgets(command, MAX_COMMAND_LENGTH, stdin) == NULL)
+    if (pid == 0)
+    {
+        /* Child process */
+        if (execlp("/bin/sh", "sh", "-c", command, NULL) == -1)
         {
-            /* Handle end of file (Ctrl+D) */
-            write(STDOUT_FILENO, "\n", 1);
-            break;
+            perror("execve");
+            _exit(EXIT_FAILURE);
         }
-
-        /* Remove the newline character at the end */
-        command[strcspn(command, "\n")] = '\0';
-
-        /* Fork a new process */
-        pid = fork();
-
-        if (pid == -1)
+    }
+    else
+    {
+        /* Parent process */
+        if (waitpid(pid, &status, 0) == -1)
         {
-            char error_message[] = "Error: Fork failed\n";
-            write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
+            printError("waitpid");
             exit(EXIT_FAILURE);
         }
 
-        if (pid == 0)
+        if (WIFEXITED(status) && WEXITSTATUS(status) != SUCCESS)
         {
-            /* Child process */
-            /* Execute the command */
-            args[0] = command;
-            if (execve(command, args, envp) == -1)
-            {
-                char error_message[] = "Error: execve failed\n";
-                write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
-                exit(EXIT_FAILURE);
-            }
-        }
-        else
-        {
-            /* Parent process */
-            /* Wait for the child process to complete */
-            int status;
-            if (waitpid(pid, &status, 0) == -1)
-            {
-                char error_message[] = "Error: waitpid failed\n";
-                write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
-                exit(EXIT_FAILURE);
-            }
-
-            /* Check if the child process terminated successfully */
-            if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
-            {
-                char error_message[MAX_COMMAND_LENGTH + sizeof("Error: Command '' not found\n")];
-                sprintf(error_message, "Error: Command '%s' not found\n", command);
-                write(STDERR_FILENO, error_message, strlen(error_message));
-            }
+            write(STDERR_FILENO, "Error: Command not found\n", 26);
         }
     }
-
-    return 0;
 }

@@ -1,32 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include "main.h"
 
-#define MAX_COMMAND_LENGTH 100
-
-/**
- * displayPrompt - Displays the shell prompt.
- */
-void displayPrompt(void)
-{
-    printf("$\t");
-    fflush(stdout); /* Ensure the prompt is displayed immediately */
-}
-
-/**
- * main - Entry point of the shell program.
- * Return: Always 0 on success.
- */
 int main(void)
 {
     char *const envp[] = {NULL};
     char command[MAX_COMMAND_LENGTH];
     pid_t pid;
-    char *args[2];
-    args[1] = NULL; /* Ensure the second element is NULL initially */
+    char *args[MAX_ARGUMENTS + 1]; /* +1 for the NULL at the end */
+    args[MAX_ARGUMENTS] = NULL; /* Ensure the last element is NULL */
 
     while (1)
     {
@@ -57,7 +37,8 @@ int main(void)
             /* Child process */
             /* Execute the command */
             args[0] = command;
-            if (execve(command, args, envp) == -1)
+            args[1] = command; /* Additional argument for execve */
+            if (execve("/bin/sh", args, envp) == -1)
             {
                 perror("execve");
                 exit(EXIT_FAILURE);
@@ -82,5 +63,5 @@ int main(void)
         }
     }
 
-    return 0;
+    return (0);
 }
